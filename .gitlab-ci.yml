@@ -1,0 +1,62 @@
+include:
+  - template: Code-Quality.gitlab-ci.yml
+
+stages:
+  - build
+  - test
+  - linting
+
+variables:
+  XCODE_PROJECT: "Shizima.xcodeproj"
+  XCODE_SCHEME: "Shizima"
+  XCODE_SIMULATOR: "platform=iOS Simulator,name=iPhone 16,OS=18.0"
+
+build:
+  stage: build
+  before_script:
+    - mkdir -p ci/build/
+  script:
+    - xcodebuild clean build -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME" -destination "$XCODE_SIMULATOR"
+  artifacts:
+    paths:
+      - ci/build/
+  tags:
+    - shizima-ios
+
+test:
+  stage: test
+  before_script:
+    - export LANG=en_US.UTF-8
+    - export LC_ALL=en_US.UTF-8
+    - mkdir -p ci/test_output/
+    - xcrun simctl shutdown all || true
+    - xcrun simctl erase all
+    - open -a Simulator
+    - sleep 10
+  script:
+    - xcodebuild test -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME" -destination "$XCODE_SIMULATOR" | tee ci/test_output/xcodebuild.log | xcpretty -r junit -o ci/test_output/report.xml
+  after_script:
+    - xcrun simctl shutdown all
+  artifacts:
+    paths:
+      - ci/test_output/report.xml
+    reports:
+      junit: ci/test_output/report.xml
+  tags:
+    - shizima-ios
+
+code_quality:
+  dependencies: []
+  stage: linting
+  before_script:
+    - mkdir -p ci/codequality/
+    - export PATH="/opt/homebrew/bin:$PATH"
+  artifacts:
+    paths:
+      - ci/codequality/codequality_report.json
+    reports:
+      codequality: ci/codequality/codequality_report.json
+  script:
+    - swiftlint --reporter codeclimate > ci/codequality/codequality_report.json
+  tags:
+    - shizima-ios
