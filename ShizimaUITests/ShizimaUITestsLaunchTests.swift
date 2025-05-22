@@ -9,7 +9,7 @@ import XCTest
 
 final class ShizimaUITestsLaunchTests: XCTestCase {
 
-    override class var runsForEachTargetApplicationUIConfiguration: Bool {
+    static override var runsForEachTargetApplicationUIConfiguration: Bool {
         true
     }
 

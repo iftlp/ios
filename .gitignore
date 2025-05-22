@@ -326,3 +326,5 @@ fabric.properties
 !/gradle/wrapper/gradle-wrapper.jar
 
 # End of https://www.gitignore.io/api/macos,carthage,symfony,xcode,android,androidstudio
+
+Shizima/Services/Network/Secrets.swift
