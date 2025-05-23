@@ -60,7 +60,7 @@ class AudioCaptureManager: ObservableObject {
             let settings: [String: Any] = [
                 AVFormatIDKey: Int(kAudioFormatLinearPCM), // WAV format
                 AVSampleRateKey: 44100,
-                AVNumberOfChannelsKey: 1,
+                AVNumberOfChannelsKey: 2,
                 AVLinearPCMBitDepthKey: 16,
                 AVLinearPCMIsBigEndianKey: false,
                 AVLinearPCMIsFloatKey: false
@@ -92,11 +92,45 @@ class AudioCaptureManager: ObservableObject {
         if extract {
             guard let url = audioFileURL else { return }
             
+            convertAudio(at: url)
             completion(url)
         }
         
         withAnimation {
             isScanning = false
         }
+    }
+    
+    private func convertAudio(at url: URL) {
+        guard let data = try? Data(contentsOf: url),
+              let fmtIndex = data.range(of: Data("fmt ".utf8)),
+              let dataIndex = data.range(of: Data("data".utf8)),
+              fmtIndex.count >= 4, dataIndex.count >= 4 else { return }
+
+        let fmtOffset = fmtIndex.lowerBound
+        let dataOffset = dataIndex.lowerBound
+
+        let fmtSize = Int(data.subdata(in: (fmtOffset + 4)..<(fmtOffset + 8)).withUnsafeBytes { $0.load(as: UInt32.self) })
+        let fmtChunk = data.subdata(in: fmtOffset..<(fmtOffset + 8 + fmtSize))
+
+        let dataSize = Int(data.subdata(in: (dataOffset + 4)..<(dataOffset + 8)).withUnsafeBytes { $0.load(as: UInt32.self) })
+        let audioData = data.subdata(in: (dataOffset + 8)..<(dataOffset + 8 + dataSize))
+
+        // Construct new RIFF header
+        var result = Data()
+        result += Data("RIFF".utf8)
+        let totalSize = 4 + fmtChunk.count + 8 + audioData.count
+        result += withUnsafeBytes(of: UInt32(totalSize).littleEndian) { Data($0) }
+        result += Data("WAVE".utf8)
+        result += fmtChunk
+        result += Data("data".utf8)
+        result += withUnsafeBytes(of: UInt32(audioData.count).littleEndian) { Data($0) }
+        result += audioData
+        
+        if FileManager.default.fileExists(atPath: url.path) {
+            try? FileManager.default.removeItem(at: url)
+        }
+        
+        FileManager.default.createFile(atPath: url.path, contents: result)
     }
 }
