@@ -19,8 +19,10 @@ git clone https://gitlab.isima.fr/shizima/clients/mobile-ios.git
 
 1. Lunch Xcode
 
-2. Open `Shizima.xcodeproj` file, in menu **Signing & Capabilities**, choose your **Personnal Team** in the **Team** selector.
+2. Open `Shizima.xcodeproj` file
 
-3. Choose the **simulator** or the **device** in the selector to the right of **Shizima** at the top center
+3. If you want to launch Shizima on a **phisical device** in `Shizima.xcodeproj` file, go in menu **Signing & Capabilities**, choose your **Personnal Team** in the **Team** selector
 
-4. Run the project with `⌘ + R` or choose the ► button on top left
+4. Choose the **simulator** or the **device** in the selector to the right of **Shizima** at the top center
+
+5. Run the project with `⌘ + R` or choose the ► button on top left
